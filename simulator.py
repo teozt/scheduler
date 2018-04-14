@@ -61,12 +61,12 @@ def RR_scheduling(process_list, time_quantum ):
     num_process = len(process_list)
     while process_list or not schedule_queue.empty():
 
-        waiting_time += schedule_queue.qsize()
-
+        print "At time " + str(current_time)
         for process in process_list:
             if (current_time == process.arrive_time):
                 schedule_queue.put(process)
                 process_list.remove(process)
+                print "\tProcess " + str(process.id) + " put in schedule_queue"
 
         if current_process is not None:
             current_process.processed_time += 1
@@ -77,20 +77,26 @@ def RR_scheduling(process_list, time_quantum ):
             schedule.append((current_time,current_process.id))
             current_process.processed_time += 1
             current_quantum += 1
+            print "\tContext switch in process " + str(current_process.id)
+        
+        print "\tProcess " + str(current_process.id) + " processed 1 unit"
+        print "\tIncrement of waiting time " + str(schedule_queue.qsize())
+        waiting_time += schedule_queue.qsize()
 
         if current_process is not None:
         
             # Check for done process
             if current_process.processed_time == current_process.burst_time:
+                print "\tProcess " + str(current_process.id) + " completed task and removing it permanently"
                 current_process = None
                 current_quantum = 0
     
             # Check for time_quantum
             elif (current_quantum == time_quantum):
+                print "\tProcess " + str(current_process.id) + " has to context switch"
                 schedule_queue.put(current_process)
                 current_process = None
                 current_quantum = 0
-
 
         current_time += 1
 
