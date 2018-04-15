@@ -144,6 +144,7 @@ def SRTF_scheduling(process_list):
             print "\tContext switch process " + str(current_process.id)
 
         waiting_time += schedule_queue.qsize()
+        print "\tIncrement of waiting time " + str(schedule_queue.qsize())
 
         if current_process is not None:
             current_process.processed_time += 1
