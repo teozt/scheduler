@@ -61,19 +61,23 @@ def RR_scheduling(process_list, time_quantum ):
     current_time = 0
     waiting_time = 0
     num_process = len(RR_process_list)
+
     while RR_process_list or not schedule_queue.empty():
 
         print "At time " + str(current_time)
+
+        # Adding process to schedule_queue based on arrival time
         for process in RR_process_list:
             if (current_time == process.arrive_time):
                 schedule_queue.put(process)
                 RR_process_list.remove(process)
                 print "\tProcess " + str(process.id) + " put in schedule_queue"
 
+        # CPU running current_process if it has a process assigned
         if current_process is not None:
             current_process.processed_time += 1
             current_quantum += 1
-
+        # CPU get current_process from scheduler and run current_process
         elif not schedule_queue.empty():
             current_process = schedule_queue.get()
             schedule.append((current_time,current_process.id))
@@ -81,13 +85,14 @@ def RR_scheduling(process_list, time_quantum ):
             current_quantum += 1
             print "\tContext switch in process " + str(current_process.id)
        
+        # Print which process consume 1 unit of processing time and update waiting time based on the queue size
         if current_process is not None:
             print "\tProcess " + str(current_process.id) + " processed 1 unit"
         print "\tIncrement of waiting time " + str(schedule_queue.qsize())
         waiting_time += schedule_queue.qsize()
 
+
         if current_process is not None:
-        
             # Check for done process
             if current_process.processed_time == current_process.burst_time:
                 print "\tProcess " + str(current_process.id) + " completed task and removing it permanently"
@@ -119,6 +124,7 @@ def SRTF_scheduling(process_list):
     while SRTF_process_list or not schedule_queue.empty():
 
         print "At time " + str(current_time)
+        # Adding process to scheudle queue based on arrival time (adding burst_time as first priority and arrival_time as second priority)
         for process in SRTF_process_list:
             if (current_time == process.arrive_time):
                 schedule_queue.put((process.burst_time,process.arrive_time,process))
@@ -138,6 +144,7 @@ def SRTF_scheduling(process_list):
             else:
                 schedule_queue.put(compare_process)
 
+        # CPU not assigned any process, get from schedule_queue
         elif not schedule_queue.empty():
             current_process = schedule_queue.get()[2]
             schedule.append((current_time, current_process.id))
@@ -181,6 +188,7 @@ def SJF_scheduling(process_list, alpha):
 
         print "At time " + str(current_time)
 
+        # Adding process to scheudle queue based on arrival time (adding predicted_burst_time as first priority and arrival_time as second priority)
         for process in SJF_process_list:
             if (current_time == process.arrive_time):
                 schedule_queue.put((predicted_dict[process.id],process.arrive_time,process))
@@ -213,6 +221,7 @@ def SJF_scheduling(process_list, alpha):
 
     return schedule,avg_waiting_time
 
+# Formula to get the predicted of burst_time
 def predictor(alpha, actual_burst, prev_predicted_value):
     return alpha*actual_burst + (1-alpha)*prev_predicted_value
 
