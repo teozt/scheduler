@@ -20,6 +20,7 @@ Revision 2:
 '''
 import sys
 import Queue
+import copy
 
 input_file = 'input.txt'
 
@@ -52,20 +53,21 @@ def FCFS_scheduling(process_list):
 #Output_1 : Schedule list contains pairs of (time_stamp, proccess_id) indicating the time switching to that proccess_id
 #Output_2 : Average Waiting Time
 def RR_scheduling(process_list, time_quantum ):
+    RR_process_list = copy.deepcopy(process_list)
     schedule = []
     schedule_queue = Queue.Queue()
     current_process = None
     current_quantum = 0
     current_time = 0
     waiting_time = 0
-    num_process = len(process_list)
-    while process_list or not schedule_queue.empty():
+    num_process = len(RR_process_list)
+    while RR_process_list or not schedule_queue.empty():
 
         print "At time " + str(current_time)
-        for process in process_list:
+        for process in RR_process_list:
             if (current_time == process.arrive_time):
                 schedule_queue.put(process)
-                process_list.remove(process)
+                RR_process_list.remove(process)
                 print "\tProcess " + str(process.id) + " put in schedule_queue"
 
         if current_process is not None:
@@ -78,8 +80,9 @@ def RR_scheduling(process_list, time_quantum ):
             current_process.processed_time += 1
             current_quantum += 1
             print "\tContext switch in process " + str(current_process.id)
-        
-        print "\tProcess " + str(current_process.id) + " processed 1 unit"
+       
+        if current_process is not None:
+            print "\tProcess " + str(current_process.id) + " processed 1 unit"
         print "\tIncrement of waiting time " + str(schedule_queue.qsize())
         waiting_time += schedule_queue.qsize()
 
@@ -105,7 +108,58 @@ def RR_scheduling(process_list, time_quantum ):
     return schedule, avg_waiting_time
 
 def SRTF_scheduling(process_list):
-    return (["to be completed, scheduling process_list on SRTF, using process.burst_time to calculate the remaining time of the current process "], 0.0)
+    SRTF_process_list = copy.deepcopy(process_list)
+    schedule = []
+    schedule_queue = Queue.PriorityQueue()
+    current_process = None
+    current_time = 0
+    waiting_time = 0
+    num_process = len(SRTF_process_list)
+
+    while SRTF_process_list or not schedule_queue.empty():
+
+        print "At time " + str(current_time)
+        for process in SRTF_process_list:
+            if (current_time == process.arrive_time):
+                schedule_queue.put((process.burst_time,process))
+                SRTF_process_list.remove(process)
+                print "\tProcess " + str(process.id) + " put in schedule_queue"
+
+        # Compare with the schedule_queue
+        if current_process is not None and not schedule_queue.empty():
+
+            compare_process = schedule_queue.get()
+            if compare_process[0] < (current_process.burst_time-current_process.processed_time):
+                print "\tCurrent process " + str(current_process.id) + " left with processing time " + str(current_process.burst_time-current_process.processed_time) + " which is more than " + str(compare_process[0]) + "(ID:" + str(compare_process[1].id) + ")"
+                print "\tContext switch in Process " + str(compare_process[1].id)
+                schedule_queue.put((current_process.burst_time-current_process.processed_time,current_process))
+                current_process = compare_process[1]
+                schedule.append((current_time, current_process.id))
+            else:
+                schedule_queue.put(compare_process)
+
+        elif not schedule_queue.empty():
+            current_process = schedule_queue.get()[1]
+            schedule.append((current_time, current_process.id))
+            print "\tContext switch process " + str(current_process.id)
+
+        waiting_time += schedule_queue.qsize()
+
+        if current_process is not None:
+            current_process.processed_time += 1
+
+            # Check for done process
+            if current_process.processed_time == current_process.burst_time:
+                print "\tProcess " + str(current_process.id) + " completed task and removing it permanently"
+                current_process = None
+
+
+        current_time += 1
+
+    avg_waiting_time = waiting_time / float(num_process)
+    
+
+    return schedule, avg_waiting_time
 
 def SJF_scheduling(process_list, alpha):
     return (["to be completed, scheduling SJF without using information from process.burst_time"],0.0)
