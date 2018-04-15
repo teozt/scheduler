@@ -121,7 +121,7 @@ def SRTF_scheduling(process_list):
         print "At time " + str(current_time)
         for process in SRTF_process_list:
             if (current_time == process.arrive_time):
-                schedule_queue.put((process.burst_time,process))
+                schedule_queue.put((process.burst_time,process.arrive_time,process))
                 SRTF_process_list.remove(process)
                 print "\tProcess " + str(process.id) + " put in schedule_queue"
 
@@ -130,16 +130,16 @@ def SRTF_scheduling(process_list):
 
             compare_process = schedule_queue.get()
             if compare_process[0] < (current_process.burst_time-current_process.processed_time):
-                print "\tCurrent process " + str(current_process.id) + " left with processing time " + str(current_process.burst_time-current_process.processed_time) + " which is more than " + str(compare_process[0]) + "(ID:" + str(compare_process[1].id) + ")"
-                print "\tContext switch in Process " + str(compare_process[1].id)
-                schedule_queue.put((current_process.burst_time-current_process.processed_time,current_process))
-                current_process = compare_process[1]
+                print "\tCurrent process " + str(current_process.id) + " left with processing time " + str(current_process.burst_time-current_process.processed_time) + " which is more than " + str(compare_process[0]) + "(ID:" + str(compare_process[2].id) + ")"
+                print "\tContext switch in Process " + str(compare_process[2].id)
+                schedule_queue.put((current_process.burst_time-current_process.processed_time,current_process.arrive_time,current_process))
+                current_process = compare_process[2]
                 schedule.append((current_time, current_process.id))
             else:
                 schedule_queue.put(compare_process)
 
         elif not schedule_queue.empty():
-            current_process = schedule_queue.get()[1]
+            current_process = schedule_queue.get()[2]
             schedule.append((current_time, current_process.id))
             print "\tContext switch process " + str(current_process.id)
 
@@ -163,8 +163,58 @@ def SRTF_scheduling(process_list):
     return schedule, avg_waiting_time
 
 def SJF_scheduling(process_list, alpha):
-    return (["to be completed, scheduling SJF without using information from process.burst_time"],0.0)
+    SJF_process_list = copy.deepcopy(process_list)
+    schedule = []
+    schedule_queue = Queue.PriorityQueue()
+    current_process = None
+    current_time = 0
+    waiting_time = 0
+    num_process = len(SJF_process_list)
+    predicted_dict = {}
+    initial_guess = 5
 
+    # Initialize predicted_dict
+    for process in SJF_process_list:
+        predicted_dict[process.id] = initial_guess
+
+    while SJF_process_list or not schedule_queue.empty():
+
+        print "At time " + str(current_time)
+
+        for process in SJF_process_list:
+            if (current_time == process.arrive_time):
+                schedule_queue.put((predicted_dict[process.id],process.arrive_time,process))
+                SJF_process_list.remove(process)
+                print "\tProcess " + str(process.id) + " put in schedule_queue with predicted burst time of " + str(predicted_dict[process.id])
+
+        # Check whether process is done
+        if current_process is None and not schedule_queue.empty():
+            current_process = schedule_queue.get()[2]
+            schedule.append((current_time,current_process.id))
+            print "\tContext switch Process " + str(current_process.id)
+        
+        waiting_time += schedule_queue.qsize()
+        print "\tIncrement of waiting time " + str(schedule_queue.qsize())
+
+        # Start process current process
+        if current_process is not None:
+            current_process.processed_time += 1
+
+            # Check for done process
+            if current_process.processed_time == current_process.burst_time:
+                predicted_dict[current_process.id] = predictor(alpha, current_process.burst_time, predicted_dict[current_process.id])
+                print "\tProcess " + str(current_process.id) + " completed task and have new predicted burst of " + str(predicted_dict[current_process.id])
+                current_process = None
+                
+
+        current_time += 1
+
+    avg_waiting_time = waiting_time / float(num_process)
+
+    return schedule,avg_waiting_time
+
+def predictor(alpha, actual_burst, prev_predicted_value):
+    return alpha*actual_burst + (1-alpha)*prev_predicted_value
 
 def read_input():
     result = []
